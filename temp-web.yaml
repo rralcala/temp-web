@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: temp-web
+spec:
+  ports:
+  - port: 8000 
+  selector:
+    app: temp-web
+  ports:  
+  - name: temp-web
+    port: 8000
+    protocol: TCP   
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: temp-web
+spec:
+  selector:
+    matchLabels:
+      app: temp-web
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: temp-web
+    spec:
+      containers:
+      - image: temp-web
+        name: temp-web
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: temp-web
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: "temp-ingress"
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+  - host: temp.home
+    http:
+      paths:
+      # The * is needed so that all traffic gets redirected to nginx
+      - path: /
+        backend:
+          serviceName: temp-web
+          servicePort: 8000
+
