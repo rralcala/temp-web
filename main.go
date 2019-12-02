@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"text/template"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -14,7 +15,7 @@ import (
 
 func getTemp() float32 {
 	var temp float32
-	db, err := sql.Open("mysql", "")
+	db, err := sql.Open("mysql", "user:password@tcp(mysql:3306)/temp")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,13 +32,20 @@ func getTemp() float32 {
 			log.Fatal(err)
 		}
 	}
-	return temp
+	return (temp * 9 / 5) + 32
 }
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
+	tmpl, err := template.ParseFiles("/home.html")
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		log.Fatal(err)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "<html><body> <p style=\"font-size:100pt;\">Temp: </p><p style=\"font-size:100pt;color:red;\">%v &#8451;</p></body></html>", getTemp())
+	err = tmpl.Execute(w, fmt.Sprintf("%6.1f", getTemp()))
+
 }
 
 func main() {
