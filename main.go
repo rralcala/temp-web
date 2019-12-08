@@ -36,6 +36,7 @@ func getTemp() (float32, int) {
 	return (temp * 9 / 5) + 32, heating
 }
 
+// HomeHandler renders the home page
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	var heatStr string
 	tmpl, err := template.ParseFiles("/home.html")
@@ -55,14 +56,12 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
 	var dir string
 
 	flag.StringVar(&dir, "dir", ".", "the directory to serve files from. Defaults to the current dir")
 	flag.Parse()
-	r := mux.NewRouter()
 
-	// This will serve files under http://localhost:8000/static/<filename>
+	r := mux.NewRouter()
 	r.HandleFunc("/", HomeHandler)
 
 	srv := &http.Server{
