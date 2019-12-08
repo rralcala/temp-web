@@ -13,14 +13,15 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func getTemp() float32 {
+func getTemp() (float32, int) {
 	var temp float32
-	db, err := sql.Open("mysql", "user:password@tcp(mysql:3306)/temp")
+	var heating int
+	db, err := sql.Open("mysql", "user:passwd@tcp(mysql:3306)/temp")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	q := `SELECT temp FROM temp ORDER BY temp.when DESC LIMIT 1`
+	q := `SELECT temp, heat FROM temp ORDER BY temp.when DESC LIMIT 1`
 	rows, err := db.Query(q)
 	if err != nil {
 		log.Fatal(err)
@@ -28,15 +29,15 @@ func getTemp() float32 {
 	defer rows.Close()
 
 	for rows.Next() {
-		if err := rows.Scan(&temp); err != nil {
+		if err := rows.Scan(&temp, &heating); err != nil {
 			log.Fatal(err)
 		}
 	}
-	return (temp * 9 / 5) + 32
+	return (temp * 9 / 5) + 32, heating
 }
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-
+	var heatStr string
 	tmpl, err := template.ParseFiles("/home.html")
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -44,7 +45,12 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	err = tmpl.Execute(w, fmt.Sprintf("%6.1f", getTemp()))
+	temp, heating := getTemp()
+
+	if heating == 1 {
+		heatStr = "&#128293;"
+	}
+	err = tmpl.Execute(w, fmt.Sprintf(" %s %6.1f", heatStr, temp))
 
 }
 
